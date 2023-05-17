@@ -1,0 +1,140 @@
+## Step 1: Create a new Aleo wallet in seconds:
+
+• Already have a wallet? Skip this step ✅
+• Visit https://aleo.tools/ and click "Generate" to create a secure wallet. Save the output 🔒
+
+Finally, use your keys to add variables to your server with these commands
+
+![Image description](https://dev-to-uploads.s3.amazonaws.com/uploads/articles/mjqeg85d6s2hjw6l4ufg.png)
+
+## Step 2: Get tokens for your wallet
+
+Simply text +1-867-888-5688 with the format below and receive 50 credits instantly. 
+
+Send: "50 credits to aleo1jjjnu3xk05h239ak5w2x5ejfh6del0whpe7pgya0pu00cp4pn5yq40ykus"
+
+## Step 3: Grab packages and start a slick tmux session.
+
+```javascript
+sudo apt update && \
+sudo apt install make clang pkg-config libssl-dev build-essential gcc xz-utils git curl vim tmux ntp jq llvm ufw -y && \
+tmux new -s deploy
+```
+
+> Building a binary requires creating a tmux session, which may take some time. But don't worry - if your ssh connection is lost, you won't have to rebuild everything. Just reconnect to your existing tmux session and pick up where you left off.
+
+## Step 4: Add your wallet and private key as a variable.
+
+```javascript
+echo Enter your Private Key: && read PK && \
+echo Enter your View Key: && read VK && \
+echo Enter your Address: && read ADDRESS
+```
+
+## Step 5: Make sure the data is correct. If not, you can do step 4 again.
+
+```javascript
+echo Private Key: $PK && \
+echo View Key: $VK && \
+echo Address: $ADDRESS
+```
+
+> Once you get a message from the bot confirming your wallet has been replenished, head to https://faucet.aleo.org/ and double-check the transaction went through.
+
+Use the Transaction ID as the answer when using the following command.
+
+```javascript
+echo Enter your Transaction ID: && read TI
+```
+
+```javascript
+CIPHERTEXT=$(curl -s https://vm.aleo.org/api/testnet3/transaction/$TI | jq -r '.execution.transitions[0].outputs[0].value')
+```
+
+## Step 6: Install required software
+
+```javascript
+cd $HOME
+git clone https://github.com/AleoHQ/snarkOS.git --depth 1
+cd snarkOS
+bash ./build_ubuntu.sh
+source $HOME/.bashrc
+source $HOME/.cargo/env
+```
+
+```javascript
+cd $HOME
+git clone https://github.com/AleoHQ/leo.git
+cd leo
+cargo install --path .
+```
+
+## Step 7: Deploy a contract
+
+```javascript
+NAME=helloworld_"${ADDRESS:4:6}"
+mkdir $HOME/leo_deploy
+cd $HOME/leo_deploy
+leo new $NAME
+```
+
+```javascript
+RECORD=$(snarkos developer decrypt --ciphertext $CIPHERTEXT --view-key $VK)
+```
+
+```javascript
+snarkos developer deploy "$NAME.aleo" \
+--private-key "$PK" \
+--query "https://vm.aleo.org/api" \
+--path "$HOME/leo_deploy/$NAME/build/" \
+--broadcast "https://vm.aleo.org/api/testnet3/transaction/broadcast" \
+--fee 4000000 \
+--record "$RECORD"
+```
+After executing the command, you should see a similar result.
+
+> root@DS-A-1:~/Leo_deploy# snarkos developer deploy "$NAME.aleo" --private-key "$PK" --query "https://vm.aleo.org/api" --path "$HOME/Leo_deploy/SNAME/build/" --broadcast "https://vm.aleo.org/api/testn
+> et3/transaction/broadcast" --fee 4000000 --record "$RECORD"
+> Creating deployment transaction for 'helloworld_1m3y73.aleo'...
+> Created deployment transaction for 'helloworld_1m3y73.aleo'
+> Successfully deployed helloworld_1m3y73.aleo' to https: //vm.aleo.org/api/testnet3/transaction/broadcast.
+
+Use the resulting transaction hash to find your contract in Explorer: https://explorer.hamp.app/
+If your contract shows up in Explorer, you can go to the next step.
+
+## Step 8: Execute a contract
+
+Use the transaction hash as the answer for the following command.
+
+```javascript
+echo Enter your Deploy hash: && read DH
+```
+
+```javascript
+CIPHERTEXT=$(curl -s https://vm.aleo.org/api/testnet3/transaction/$DH | jq -r '.fee.transition.outputs[].value')
+```
+
+```javascript
+RECORD=$(snarkos developer decrypt --ciphertext $CIPHERTEXT --view-key $VK)
+```
+
+```javascript
+snarkos developer execute "$NAME.aleo" "hello" "1u32" "2u32" \
+--private-key $PK \
+--query "https://vm.aleo.org/api" \
+--broadcast "https://vm.aleo.org/api/testnet3/transaction/broadcast" \
+--fee 1000000 \
+--record "$RECORD"
+```
+After execution, you should see the following output
+
+> root@DS-A-1:~/leo_deploy# snarkos developer execute "$NAME.aleo" "hello" "1u32" "2u32" --private-key $PK --query "https://vm.aleo.org/api" --broadcast "https://vm.aleo.org/api/testnet3/transaction/br
+> oadcast"
+> --fee 1000000 --record "$RECORD"
+> w Creating execution transaction for 'helloworld_1m3y73.aleo'
+> © Created execution transaction for 'helloworld_1m3y73.aleo/hello'
+> © Successfully broadcast execution 'helloworld_1m3y73.aleo/hello' to the https://vm.aleo.org/api/testnet3/transaction/broadcast.
+
+Use the resulting transaction hash to find your contract in Explorer: https://explorer.hamp.app/
+
+## Congratulations you have deployed the contract to Aleo!
